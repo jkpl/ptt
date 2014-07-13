@@ -1,12 +1,17 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Ptt.Task where
 
 import Prelude as P
 import qualified Data.Text as T
+import Control.Monad
+import Control.Applicative
 import Data.List
 import Data.Maybe
 import Data.Time.Calendar
+import Data.Yaml
 import qualified Data.Map as M
 import qualified Ptt.Interval as I
+import Ptt.Util
 
 newtype TaskMap = Tm (M.Map Day Tasks) deriving Show
 type Selector = (Day, TaskName)
@@ -15,7 +20,34 @@ type Tasks = M.Map TaskName Task
 
 data Task = Task
   { taskDescriptions :: [T.Text]
-  , taskTimes :: [I.Interval] } deriving Show
+  , taskTimes :: [I.Interval]
+  } deriving Show
+
+instance ToJSON Task where
+  toJSON (Task descs times) = object
+    [ "descriptions" .= toJSON descs
+    , "times" .= toJSON times ]
+
+instance FromJSON Task where
+  parseJSON (Object v) =
+    Task <$> v .: "descriptions" <*> v .: "times"
+  parseJSON _ = mzero
+
+instance ToJSON TaskMap where
+  toJSON (Tm tasks) = toJSON . M.mapKeys formatDay $ tasks
+
+instance FromJSON TaskMap where
+  parseJSON v = Tm <$> do
+    m1 <- parseJSON v
+    m2 <- mapM convert (M.toList m1)
+    return $ M.fromList m2
+    where convert (ds, tasks) = do
+            d <- parseJsonDay ds
+            return (d, tasks)
+          parseJsonDay ds =
+            case parseDay ds of
+              Just d -> return d
+              Nothing -> mzero
 
 taskLength :: Task -> Integer
 taskLength = sum . map I.intervalLength . taskTimes
@@ -73,3 +105,4 @@ moveTask selector@(_, name) to tasks = fromMaybe tasks moveTask'
 deleteOldTasks :: Day -> TaskMap -> TaskMap
 deleteOldTasks d (Tm tasks) = Tm $ M.filterWithKey isNewer tasks
   where isNewer k _ = k >= d
+
