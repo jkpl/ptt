@@ -25,7 +25,8 @@ library
   exposed-modules:
     Ptt.Interval,
     Ptt.Task,
-    Ptt.Parse
+    Ptt.Parse,
+    Ptt.Format
   ghc-options:
     -Wall
 
