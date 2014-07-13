@@ -1,5 +1,9 @@
 module Main where
 
+import Ptt.Options (getOptions)
+
 main :: IO ()
-main = putStrLn "hello world."
+main = do
+  opts <- getOptions
+  putStrLn $ show opts
 

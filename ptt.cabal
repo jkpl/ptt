@@ -6,7 +6,6 @@ license-file:        LICENSE
 author:              Jaakko Pallari
 maintainer:          jkpl@lepovirta.org
 build-type:          Simple
--- extra-source-files:  
 cabal-version:       >=1.10
 
 library
@@ -26,7 +25,8 @@ library
     Ptt.Util,
     Ptt.Interval,
     Ptt.Task,
-    Ptt.Format
+    Ptt.Format,
+    Ptt.Options
   ghc-options:
     -Wall
 
