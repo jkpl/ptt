@@ -23,7 +23,8 @@ library
     optparse-applicative ==0.9.0
   default-language:    Haskell2010
   exposed-modules:
-    Ptt.Interval
+    Ptt.Interval,
+    Ptt.Task
   ghc-options:
     -Wall
 
