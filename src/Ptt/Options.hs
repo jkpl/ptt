@@ -29,7 +29,7 @@ data Command
   deriving (Eq, Show)
 
 dayOpt :: Parser (Maybe Day)
-dayOpt = fmap (parseDay . T.pack) . strOption
+dayOpt = fmap (>>= parseDay . T.pack) . optional . strOption
   $ long "day"
   <> short 'd'
   <> metavar "DAY"
