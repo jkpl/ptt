@@ -17,7 +17,7 @@ main = do
   conf <- Conf.readFromFile
   day <- getDay opts
   tasks <- getTasks conf
-  let result = action day (optVerbose opts) (optCommand opts) tasks
+  let result = action day (optCommand opts) tasks
   case result of
     Edit newTasks -> saveTasks conf newTasks
     Print text -> TIO.putStrLn text

@@ -14,16 +14,15 @@ import Ptt.Util
 
 data Options = Options
   { optDay :: Maybe Day
-  , optVerbose :: Bool
   , optCommand :: Command
   } deriving (Eq, Show)
 
 data Command
-  = Display (Maybe T.Text)
-  | Add T.Text (Maybe Integer) (Maybe Integer) (Maybe T.Text)
+  = Display (Maybe T.Text) Bool
+  | Add T.Text (Maybe I.Interval) (Maybe T.Text)
   | DeleteTask T.Text
   | DeleteDesc T.Text Int
-  | DeleteInterval T.Text Integer Integer
+  | DeleteInterval T.Text I.Interval
   | Rename T.Text T.Text
   | Move T.Text Day
   deriving (Eq, Show)
@@ -44,6 +43,9 @@ verbose = switch
 day :: Parser Day
 day = argument (parseDay . T.pack) (metavar "DAY")
 
+interval :: Parser I.Interval
+interval = I.interval <$> time <*> time
+
 time :: Parser Integer
 time = argument (I.secondsFromText . T.pack) (metavar "TIME")
 
@@ -61,7 +63,7 @@ descriptionIndex :: Parser Int
 descriptionIndex = argument readMaybe (metavar "INDEX")
 
 opts :: ParserInfo Options
-opts = info (Options <$> dayOpt <*> verbose <*> cmd)
+opts = info (Options <$> dayOpt <*> cmd)
   $ fullDesc
   <> progDesc "Manage personal tasks"
   <> header "ptt - personal task tracker"
@@ -77,34 +79,33 @@ cmd = subparser
   <> move
   where
     display = command "show" $ info
-      (Display <$> optional task)
-      (progDesc "Show accumulated log")
+      (Display <$> optional task <*> verbose)
+      (fullDesc <> progDesc "Show accumulated log")
 
     add = command "add" $ info
       (Add <$> task
-           <*> (optional time)
-           <*> (optional time)
+           <*> (optional interval)
            <*> (optional description))
-      (progDesc "Add new task")
+      (fullDesc <> progDesc "Add new task")
 
     deleteTask = command "deltask" $ info
-      (DeleteTask <$> task) (progDesc "Delete task")
+      (DeleteTask <$> task) (fullDesc <> progDesc "Delete task")
 
     deleteDesc = command "deldesc" $ info
       (DeleteDesc <$> task <*> descriptionIndex)
-      (progDesc "Delete description with given index")
+      (fullDesc <> progDesc "Delete description with given index")
 
     deleteInterval = command "del" $ info
-      (DeleteInterval <$> task <*> time <*> time)
-      (progDesc "Delete interval from task")
+      (DeleteInterval <$> task <*> interval)
+      (fullDesc <> progDesc "Delete interval from task")
 
     rename = command "rename" $ info
       (Rename <$> task <*> task)
-      (progDesc "Rename task")
+      (fullDesc <> progDesc "Rename task")
 
     move = command "move" $ info
       (Move <$> task <*> day)
-      (progDesc "Move task to other day")
+      (fullDesc <> progDesc "Move task to other day")
 
 getOptions :: IO Options
 getOptions = execParser opts
