@@ -11,7 +11,7 @@ formatTasks :: Tasks -> T.Text
 formatTasks tasks =
   let tasksText = T.intercalate "\n\n" . map (formatPair) . M.toList $ tasks
       totalText = T.append "Total: " (formatTasksTotalLength tasks)
-  in T.concat [tasksText, "\n\n", totalText]
+  in T.intercalate "\n\n" [tasksText, totalText]
   where formatPair (name, task) = T.concat [name, ":\n", formatTask task]
 
 formatTasksShort :: Tasks -> T.Text
@@ -24,12 +24,18 @@ formatTasksShort tasks =
 formatTask :: Task -> T.Text
 formatTask task@(Task descs intervals) =
   let ds = T.intercalate "\n" $ map (T.append "- ") descs
-      is = T.intercalate ", " $ map intervalToText intervals
+      intervalText = T.intercalate ", " $ map intervalToText intervals
       summary = formatTaskShort task
-  in T.concat [ds, "\nTime: ", is, "\n=> ", summary]
+      time = if T.null intervalText
+             then T.empty
+             else T.concat ["Time: ", intervalText, "\n=> ", summary]
+  in T.intercalate "\n" $ removeEmptyTexts [ds, time]
 
 formatTaskShort :: Task -> T.Text
 formatTaskShort = secondsToLength . taskLength
 
 formatTasksTotalLength :: Tasks -> T.Text
 formatTasksTotalLength = secondsToLength . totalLength 
+
+removeEmptyTexts :: [T.Text] -> [T.Text]
+removeEmptyTexts = filter (not . T.null . T.strip)
