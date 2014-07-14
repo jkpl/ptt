@@ -52,6 +52,9 @@ instance FromJSON TaskMap where
 taskLength :: Task -> Integer
 taskLength = sum . map I.intervalLength . taskTimes
 
+totalLength :: Tasks -> Integer
+totalLength = sum . map taskLength . M.elems
+
 mergeTasks :: Task -> Task -> Task
 mergeTasks (Task descs1 times1) (Task descs2 times2) =
   let descs = descs1 ++ descs2
@@ -106,3 +109,5 @@ deleteOldTasks :: Day -> TaskMap -> TaskMap
 deleteOldTasks d (Tm tasks) = Tm $ M.filterWithKey isNewer tasks
   where isNewer k _ = k >= d
 
+getTasksForDay :: Day -> TaskMap -> Maybe Tasks
+getTasksForDay day (Tm tasks) = M.lookup day tasks

@@ -8,11 +8,17 @@ import Ptt.Task
 import Ptt.Interval
 
 formatTasks :: Tasks -> T.Text
-formatTasks = T.intercalate "\n\n" . map (formatPair) . M.toList
+formatTasks tasks =
+  let tasksText = T.intercalate "\n\n" . map (formatPair) . M.toList $ tasks
+      totalText = T.append "Total: " (formatTasksTotalLength tasks)
+  in T.concat [tasksText, "\n\n", totalText]
   where formatPair (name, task) = T.concat [name, ":\n", formatTask task]
 
 formatTasksShort :: Tasks -> T.Text
-formatTasksShort = T.intercalate "\n" . map (formatPair) . M.toList
+formatTasksShort tasks =
+  let tasksText = T.intercalate "\n" . map (formatPair) . M.toList $ tasks
+      totalText = T.append "Total: " (formatTasksTotalLength tasks)
+  in T.concat [tasksText, "\n", totalText]
   where formatPair (name, task) = T.concat [name, ": ", formatTaskShort task]
 
 formatTask :: Task -> T.Text
@@ -25,3 +31,5 @@ formatTask task@(Task descs intervals) =
 formatTaskShort :: Task -> T.Text
 formatTaskShort = secondsToLength . taskLength
 
+formatTasksTotalLength :: Tasks -> T.Text
+formatTasksTotalLength = secondsToLength . totalLength 
