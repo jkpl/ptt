@@ -88,16 +88,16 @@ getTask :: Selector -> TaskMap -> Maybe Task
 getTask (day, name) (Tm tasks) = M.lookup day tasks >>= M.lookup name
 
 addTask :: Selector -> Task -> TaskMap -> TaskMap
-addTask (day, name) task (Tm tasks) = Tm $ M.adjust (add name task) day tasks
+addTask (day, name) task = adjust (add name task) day
 
 renameTask :: Selector -> TaskName -> TaskMap -> TaskMap
-renameTask (day, name) newName (Tm tasks) = Tm $ M.adjust (rename newName name) day tasks
+renameTask (day, name) newName = adjust (rename newName name) day
 
 deleteTask :: Selector -> TaskMap -> TaskMap
-deleteTask (day, name) (Tm tasks) = Tm $ M.adjust (M.delete name) day tasks
+deleteTask (day, name) = adjust (M.delete name) day
 
 adjustTask :: (Task -> Task) -> Selector -> TaskMap -> TaskMap
-adjustTask f (day, name) (Tm tasks) = Tm $ M.adjust (M.adjust f name) day tasks
+adjustTask f (day, name) = adjust (M.adjust f name) day
 
 moveTask :: Selector -> Day -> TaskMap -> TaskMap
 moveTask selector@(_, name) to tasks = fromMaybe tasks moveTask'
@@ -111,3 +111,9 @@ deleteOldTasks d (Tm tasks) = Tm $ M.filterWithKey isNewer tasks
 
 getTasksForDay :: Day -> TaskMap -> Maybe Tasks
 getTasksForDay day (Tm tasks) = M.lookup day tasks
+
+adjust :: (Tasks -> Tasks) -> Day -> TaskMap -> TaskMap
+adjust f day (Tm tasks) = Tm $ M.insertWith (\_ ts -> f ts) day (f M.empty) tasks
+
+emptyTaskMap :: TaskMap
+emptyTaskMap = Tm M.empty

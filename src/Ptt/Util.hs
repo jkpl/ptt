@@ -4,12 +4,13 @@ module Ptt.Util
   , formatDay
   , readInt
   , tshow
+  , currentDay
   ) where
 
 import Prelude as P
 import qualified Data.Text as T
-import Data.Time.Calendar
-import Data.Time.Format
+import Control.Monad
+import Data.Time
 import System.Locale (defaultTimeLocale)
 import Text.Read (readMaybe)
 
@@ -25,3 +26,5 @@ readInt = readMaybe . T.unpack
 tshow :: Show a => a -> T.Text
 tshow = T.pack . show
 
+currentDay :: IO Day
+currentDay = liftM utctDay getCurrentTime
