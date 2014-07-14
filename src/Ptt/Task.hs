@@ -78,7 +78,7 @@ deleteNth i xs
 rename :: TaskName -> TaskName -> Tasks -> Tasks
 rename newName name tasks =
   let updatedTasks = do task <- M.lookup name tasks
-                        return $ add newName task tasks
+                        return $ add newName task (M.delete name tasks)
   in fromMaybe tasks updatedTasks
 
 deleteInterval :: I.Interval -> Task -> Task
