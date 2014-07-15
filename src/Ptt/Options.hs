@@ -9,7 +9,8 @@ import Control.Applicative
 import Options.Applicative
 import Text.Read
 import Data.Time.Calendar
-import qualified Ptt.Interval as I
+import qualified Ptt.Time.Interval as I
+import Ptt.Time.Clock
 import Ptt.Util
 
 data Options = Options
@@ -47,7 +48,7 @@ interval :: Parser I.Interval
 interval = I.interval <$> time <*> time
 
 time :: Parser Integer
-time = argument (I.secondsFromText . T.pack) (metavar "TIME")
+time = argument (secondsFromText . T.pack) (metavar "TIME")
 
 task :: Parser T.Text
 task = argument (return . T.pack) (metavar "TASK")

@@ -10,7 +10,7 @@ import Data.Maybe
 import Data.Time.Calendar
 import Data.Yaml
 import qualified Data.Map as M
-import qualified Ptt.Interval as I
+import qualified Ptt.Time.Interval as I
 import Ptt.Util
 
 newtype TaskMap = Tm (M.Map Day Tasks) deriving Show

@@ -1,12 +1,24 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Ptt.Interval where
+module Ptt.Time.Interval
+  ( Interval(..)
+  , interval
+  , intervalIsEmpty
+  , fromTimeOfDay
+  , intervalLength
+  , hasOverlap
+  , add
+  , difference
+  , remove
+  , intervalToText
+  , intervalFromText
+  ) where
 
 import Prelude as P
 import qualified Data.Text as T
 import Control.Monad
 import Data.Yaml
 import Data.List
-import Ptt.Util
+import Ptt.Time.Clock
 
 data Interval = Interval
   { intervalFrom :: Integer
@@ -40,18 +52,6 @@ interval from to
 fromTimeOfDay :: (Integer, Integer) -> (Integer, Integer) -> Interval
 fromTimeOfDay from to = interval (uncurry timeOfDay from) (uncurry timeOfDay to)
 
-hours :: Integral a => a -> Int
-hours seconds = fromIntegral $ seconds `div` 3600
-
-minutes :: Integral a => a -> Int
-minutes seconds = fromIntegral $ seconds `rem` 3600 `div` 60
-
-timeOfDay :: Integral a => a -> a -> Integer
-timeOfDay hour minute =
-  let hourSeconds = hour * 3600
-      minuteSeconds = minute * 60
-  in fromIntegral $ hourSeconds + minuteSeconds
-
 intervalIsEmpty :: Interval -> Bool
 intervalIsEmpty (Interval from to) = from == to
 
@@ -76,50 +76,23 @@ add i is =
   in merged : nonOverlapping
 
 difference :: Interval -> Interval -> [Interval]
-difference i1@(Interval f1 t1) i2@(Interval f2 t2)
-  | i1 == i2 = []
-  | f1 < f2 && t2 < t1 = [Interval f1 f2, Interval t2 t1]
-  | otherwise = interval (max f1 f2) (min t1 t2) : []
+difference i1@(Interval f1 t1) (Interval f2 t2)
+  | f1 < f2 && t2 < t1 = [interval f1 f2, interval t2 t1]
+  | f2 <= f1 && t1 <= t2 = []
+  | t2 < f1 || t1 < f2 = i1 : []
+  | otherwise =
+    let from = if f2 < f1 then max f1 t2 else f1
+        to = if f2 < f1 then t1 else min t1 f2
+    in interval from to : []
 
 remove :: Interval -> [Interval] -> [Interval]
 remove i = concatMap (\a -> difference a i)
-
-secondsToText :: Integral a => a -> T.Text
-secondsToText seconds =
-  let h = pad $ hours seconds
-      m = pad $ minutes seconds
-  in T.concat [h, ":", m]
-  where pad i
-          | i < 10 = T.concat ["0", tshow i]
-          | otherwise = tshow i
-
-secondsToLength :: Integral a => a -> T.Text
-secondsToLength seconds =
-  let h = formatNonZero (hours seconds) "h"
-      m = formatNonZero (minutes seconds) "m"
-  in T.intercalate " " $ filter (not . T.null) [h, m]
-  where formatNonZero i s = if i > 0 then T.append (tshow i) s else ""
 
 intervalToText :: Interval -> T.Text
 intervalToText (Interval from to) =
   let fromS = secondsToText from
       toS = secondsToText to
   in T.concat [fromS, " - ", toS]
-
-secondsFromText :: T.Text -> Maybe Integer
-secondsFromText time =
-  case T.split isTimeSeparator time of
-    (hs:ms:[]) -> do
-      h <- readInt hs
-      m <- readInt ms
-      return $ timeOfDay h m
-    (hs:[]) -> do
-      h <- readInt hs
-      return $ timeOfDay h 0
-    _ -> Nothing
-
-isTimeSeparator :: Char -> Bool
-isTimeSeparator c = any (== c) ['.', ':']
 
 intervalFromText :: T.Text -> Maybe Interval
 intervalFromText i =

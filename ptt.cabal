@@ -23,7 +23,9 @@ library
   default-language:    Haskell2010
   exposed-modules:
     Ptt.Util,
-    Ptt.Interval,
+    Ptt.Time,
+    Ptt.Time.Clock,
+    Ptt.Time.Interval,
     Ptt.Task,
     Ptt.Format,
     Ptt.Options,

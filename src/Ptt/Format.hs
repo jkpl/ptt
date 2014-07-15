@@ -5,7 +5,8 @@ import Prelude as P
 import qualified Data.Text as T
 import qualified Data.Map as M
 import Ptt.Task
-import Ptt.Interval
+import Ptt.Time.Interval
+import Ptt.Time.Clock
 
 formatTasks :: Tasks -> T.Text
 formatTasks tasks =
