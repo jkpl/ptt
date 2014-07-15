@@ -37,6 +37,9 @@ interval from to
   | to < from = Interval to from
   | otherwise = Interval from to
 
+fromTimeOfDay :: (Integer, Integer) -> (Integer, Integer) -> Interval
+fromTimeOfDay from to = interval (uncurry timeOfDay from) (uncurry timeOfDay to)
+
 hours :: Integral a => a -> Int
 hours seconds = fromIntegral $ seconds `div` 3600
 
@@ -57,7 +60,8 @@ intervalLength (Interval from to) = abs $ to - from
 
 hasOverlap :: Interval -> Interval -> Bool
 hasOverlap (Interval f1 t1) (Interval f2 t2) =
-  (f1 <= f2 && f2 <= t1) || (f1 <= t2 && t2 <= t1) 
+  (f1 <= f2 && f2 <= t1) || (f1 <= t2 && t2 <= t1) ||
+  (f2 <= f1 && f1 <= t2) || (f2 <= t1 && t1 <= t2)
 
 extend :: Interval -> Interval -> Interval
 extend (Interval f1 t1) (Interval f2 t2) =
