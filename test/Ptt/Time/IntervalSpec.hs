@@ -1,14 +1,10 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Ptt.Time.IntervalSpec where
 
-import Control.Applicative
 import Test.Hspec
 import Test.QuickCheck
 import Data.List
 import qualified Ptt.Time.Interval as I
-
-instance Arbitrary I.Interval where
-  arbitrary = I.interval <$> choose (0, 86400) <*> choose (0, 86400)
+import Ptt.Arbitrary()
 
 spec :: Spec
 spec = do
@@ -74,6 +70,10 @@ spec = do
         let is = intervalList [i2, i3, i4]
             nextIs = I.remove i is
         in totalLength nextIs <= totalLength is
+
+  describe "parsing and formatting" $ do
+    it "can be repeated to produce the original interval" $ property $
+      \interval -> I.intervalFromText (I.intervalToText interval) == Just interval
 
 totalLength :: [I.Interval] -> Integer
 totalLength = sum . map I.intervalLength
