@@ -1,5 +1,24 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Ptt.Task where
+module Ptt.Task
+  ( TaskMap(..)
+  , Selector
+  , TaskName
+  , Tasks
+  , Task(..)
+  , taskLength
+  , totalLength
+  , addTask
+  , deleteTask
+  , renameTask
+  , moveTask
+  , emptyTaskMap
+  , adjustTask
+  , deleteDescription
+  , deleteInterval
+  , getTask
+  , getTasksForDay
+  , deleteOldTasks
+  ) where
 
 import Prelude as P
 import qualified Data.Text as T
@@ -21,7 +40,7 @@ type Tasks = M.Map TaskName Task
 data Task = Task
   { taskDescriptions :: [T.Text]
   , taskTimes :: [I.Interval]
-  } deriving Show
+  } deriving (Eq, Show)
 
 instance ToJSON Task where
   toJSON (Task descs times) = object
@@ -63,9 +82,9 @@ mergeTasks (Task descs1 times1) (Task descs2 times2) =
 
 add :: TaskName -> Task -> Tasks -> Tasks
 add name task tasks =
-  let existingTask = do foundTask <- M.lookup name tasks
-                        return $ mergeTasks task foundTask
-  in M.insert name (fromMaybe task existingTask) tasks
+  let existingTask = M.lookup name tasks
+      taskToInsert = maybe task (mergeTasks task) existingTask
+  in M.insert name taskToInsert tasks
 
 deleteDescription :: Int -> Task -> Task
 deleteDescription i (Task ds ts) = Task (deleteNth i ds) ts
