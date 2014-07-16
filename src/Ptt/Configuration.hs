@@ -17,9 +17,6 @@ import System.Directory
 import System.FilePath
 import Ptt.Util
 
-defaultKeepDays :: Integer
-defaultKeepDays = 8
-
 defaultStorageFilename :: String
 defaultStorageFilename = ".ptt_storage.yaml"
 
@@ -32,10 +29,10 @@ getConfPath = do
   return $ combine home configurationFilename
 
 defaultConfiguration :: Configuration
-defaultConfiguration = Configuration defaultKeepDays Nothing
+defaultConfiguration = Configuration Nothing Nothing
 
 data Configuration = Configuration
-  { keepDays :: Integer
+  { keepDays :: Maybe Integer
   , storagePath :: Maybe T.Text
   } deriving (Eq, Show)
 
@@ -46,7 +43,7 @@ instance ToJSON Configuration where
 
 instance FromJSON Configuration where
   parseJSON (Object v) =
-    Configuration <$> v .:? "keepDays" .!= defaultKeepDays
+    Configuration <$> v .:? "keepDays"
                   <*> v .:? "storagePath"
   parseJSON _ = mzero
 
@@ -75,9 +72,11 @@ getStoragePath conf =
       home <- getHomeDirectory
       return $ combine home defaultStorageFilename
 
-getLastKeptDay :: Configuration -> IO Day
+getLastKeptDay :: Configuration -> IO (Maybe Day)
 getLastKeptDay conf = do
   day <- currentDay
-  let daysToReduce = keepDays conf
-  return $ addDays (-daysToReduce) day
+  return $ case keepDays conf of
+    Nothing -> Nothing
+    Just 0 -> Nothing
+    Just daysToReduce -> Just $ addDays (1 - daysToReduce) day
 

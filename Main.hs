@@ -42,4 +42,5 @@ saveTasks :: Configuration -> TaskMap -> IO ()
 saveTasks conf tasks = do
   path <- getStoragePath conf
   day <- getLastKeptDay conf
-  encodeFile path $ deleteOldTasks day tasks
+  let ts = maybe tasks (flip deleteOldTasks tasks) day
+  encodeFile path ts
