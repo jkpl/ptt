@@ -2,9 +2,7 @@
 module Ptt.TaskSpec where
 
 import Test.Hspec
-import Test.QuickCheck
 import Data.Time
-import Ptt.Arbitrary()
 import Ptt.Task
 import qualified Ptt.Time.Interval as I
 
