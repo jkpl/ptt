@@ -18,6 +18,7 @@ module Ptt.Task
   , getTask
   , getTasksForDay
   , deleteOldTasks
+  , taskMapToList
   ) where
 
 import Prelude as P
@@ -136,3 +137,7 @@ adjust f day (Tm tasks) = Tm $ M.insertWith (\_ ts -> f ts) day (f M.empty) task
 
 emptyTaskMap :: TaskMap
 emptyTaskMap = Tm M.empty
+
+taskMapToList :: TaskMap -> [(Day, Tasks)]
+taskMapToList (Tm tasks) = M.toList tasks
+
