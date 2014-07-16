@@ -14,8 +14,8 @@ import Ptt.Time.Clock
 import Ptt.Util
 
 data Options = Options
-  { optDay :: Maybe Day
-  , optCommand :: Command
+  { optCommand :: Command
+  , optDay :: Maybe Day
   } deriving (Eq, Show)
 
 data Command
@@ -64,9 +64,8 @@ descriptionIndex :: Parser Int
 descriptionIndex = argument readMaybe (metavar "INDEX")
 
 opts :: ParserInfo Options
-opts = info (Options <$> dayOpt <*> cmd)
+opts = info (Options <$> cmd <*> dayOpt)
   $ fullDesc
-  <> progDesc "Manage personal tasks"
   <> header "ptt - personal task tracker"
 
 cmd :: Parser Command
@@ -109,4 +108,4 @@ cmd = subparser
       (fullDesc <> progDesc "Move task to other day")
 
 getOptions :: IO Options
-getOptions = execParser opts
+getOptions = customExecParser (prefs showHelpOnError) opts
