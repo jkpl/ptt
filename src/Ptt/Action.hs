@@ -41,10 +41,8 @@ edit day command tasks =
 showTasks :: Day -> Bool -> Maybe TaskName -> TaskMap -> T.Text
 showTasks day verbose taskName tasks =
   case taskName of
-    Just name -> fromMaybe T.empty $ do
-      task <- getTask (day, name) tasks
-      let fn = if verbose then F.formatTask else F.formatTaskShort
-      return $ fn task
+    Just name ->
+      maybe T.empty (F.formatTask verbose) (getTask (day, name) tasks)
     Nothing ->
-      let fn = if verbose then F.formatTasks else F.formatTasksShort
-      in fn (getTasksForDay day tasks)
+      F.formatTasks verbose (getTasksForDay day tasks)
+

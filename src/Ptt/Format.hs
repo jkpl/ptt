@@ -1,10 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ptt.Format
   ( formatTasksByDay
+  , formatTasksByDayLong
   , formatTasksByDayShort
   , formatTasks
+  , formatTasksLong
   , formatTasksShort
   , formatTask
+  , formatTaskLong
   , formatTaskShort
   ) where
 
@@ -14,11 +17,15 @@ import qualified Data.Set as S
 import Ptt.Task
 import Ptt.Time
 
-formatTasksByDay :: Tasks -> T.Text
-formatTasksByDay = separateBy 2 . map formatPair . groupByDay
+formatTasksByDay :: Bool -> Tasks -> T.Text
+formatTasksByDay verbose =
+  if verbose then formatTasksByDayLong else formatTasksByDayShort
+
+formatTasksByDayLong :: Tasks -> T.Text
+formatTasksByDayLong = separateBy 2 . map formatPair . groupByDay
   where formatPair (d, tasks) = T.concat
               [ formatDay d, ":\n"
-              , indent 2 $ formatTasks (S.toList tasks)]
+              , indent 2 $ formatTasksLong (S.toList tasks)]
 
 formatTasksByDayShort :: Tasks -> T.Text
 formatTasksByDayShort = separateBy 1 . map formatPair . groupByDay
@@ -26,14 +33,18 @@ formatTasksByDayShort = separateBy 1 . map formatPair . groupByDay
               [ formatDay d, ":\n"
               , indent 2 $ formatTasksShort (S.toList tasks)]
 
-formatTasks :: [(TaskName, Task)] -> T.Text
-formatTasks tasks =
+formatTasks :: Bool -> [(TaskName, Task)] -> T.Text
+formatTasks verbose =
+  if verbose then formatTasksLong else formatTasksShort
+
+formatTasksLong :: [(TaskName, Task)] -> T.Text
+formatTasksLong tasks =
   let tasksText = separateBy 2 . map formatPair $ tasks
       totalText = T.append "Total: " (formatTasksTotalLength tasks)
   in T.intercalate "\n\n" [tasksText, totalText]
   where formatPair (name, task) = T.concat
               [ name, ":\n"
-              , indent 2 $ formatTask task]
+              , indent 2 $ formatTaskLong task]
 
 formatTasksShort :: [(TaskName, Task)] -> T.Text
 formatTasksShort tasks =
@@ -42,8 +53,12 @@ formatTasksShort tasks =
   in T.concat [tasksText, "\n", totalText]
   where formatPair (name, task) = T.concat [name, ": ", formatTaskShort task]
 
-formatTask :: Task -> T.Text
-formatTask task = renderBlock [formatDescriptions task, formatTime task]
+formatTask :: Bool -> Task -> T.Text
+formatTask verbose =
+  if verbose then formatTaskLong else formatTaskShort
+
+formatTaskLong :: Task -> T.Text
+formatTaskLong task = renderBlock [formatDescriptions task, formatTime task]
 
 formatTaskShort :: Task -> T.Text
 formatTaskShort = formatTaskLength
