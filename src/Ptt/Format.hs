@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ptt.Format
-  ( formatTaskMap
-  , formatTaskMapShort
+  ( formatTasksByDay
+  , formatTasksByDayShort
   , formatTasks
   , formatTasksShort
   , formatTask
@@ -10,36 +10,34 @@ module Ptt.Format
 
 import Prelude as P
 import qualified Data.Text as T
-import qualified Data.Map as M
-import Ptt.Util
+import qualified Data.Set as S
 import Ptt.Task
-import Ptt.Time.Interval
-import Ptt.Time.Clock
+import Ptt.Time
 
-formatTaskMap :: TaskMap -> T.Text
-formatTaskMap = separateBy 2 . map formatPair . taskMapToList
+formatTasksByDay :: Tasks -> T.Text
+formatTasksByDay = separateBy 2 . map formatPair . groupByDay
   where formatPair (d, tasks) = T.concat
               [ formatDay d, ":\n"
-              , indent 2 $ formatTasks tasks]
+              , indent 2 $ formatTasks (S.toList tasks)]
 
-formatTaskMapShort :: TaskMap -> T.Text
-formatTaskMapShort = separateBy 1 . map formatPair . taskMapToList
+formatTasksByDayShort :: Tasks -> T.Text
+formatTasksByDayShort = separateBy 1 . map formatPair . groupByDay
   where formatPair (d, tasks) = T.concat
               [ formatDay d, ":\n"
-              , indent 2 $ formatTasksShort tasks]
+              , indent 2 $ formatTasksShort (S.toList tasks)]
 
-formatTasks :: Tasks -> T.Text
+formatTasks :: [(TaskName, Task)] -> T.Text
 formatTasks tasks =
-  let tasksText = separateBy 2 . map formatPair . M.toList $ tasks
+  let tasksText = separateBy 2 . map formatPair $ tasks
       totalText = T.append "Total: " (formatTasksTotalLength tasks)
   in T.intercalate "\n\n" [tasksText, totalText]
   where formatPair (name, task) = T.concat
               [ name, ":\n"
               , indent 2 $ formatTask task]
 
-formatTasksShort :: Tasks -> T.Text
+formatTasksShort :: [(TaskName, Task)] -> T.Text
 formatTasksShort tasks =
-  let tasksText = separateBy 1 . map formatPair . M.toList $ tasks
+  let tasksText = separateBy 1 . map formatPair $ tasks
       totalText = T.append "Total: " (formatTasksTotalLength tasks)
   in T.concat [tasksText, "\n", totalText]
   where formatPair (name, task) = T.concat [name, ": ", formatTaskShort task]
@@ -67,8 +65,8 @@ formatIntervals = T.intercalate ", " . map intervalToText . taskTimes
 formatTaskLength :: Task -> T.Text
 formatTaskLength = secondsToLength . taskLength
 
-formatTasksTotalLength :: Tasks -> T.Text
-formatTasksTotalLength = secondsToLength . totalLength 
+formatTasksTotalLength :: [(a, Task)] -> T.Text
+formatTasksTotalLength = secondsToLength . sum . map (taskLength . snd)
 
 removeEmptyTexts :: [T.Text] -> [T.Text]
 removeEmptyTexts = filter (not . T.null . T.strip)

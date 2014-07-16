@@ -11,7 +11,7 @@ import Text.Read
 import Data.Time.Calendar
 import qualified Ptt.Time.Interval as I
 import Ptt.Time.Clock
-import Ptt.Util
+import Ptt.Time.Date
 
 data Options = Options
   { optCommand :: Command

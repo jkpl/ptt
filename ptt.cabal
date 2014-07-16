@@ -26,6 +26,7 @@ library
     Ptt.Time,
     Ptt.Time.Clock,
     Ptt.Time.Interval,
+    Ptt.Time.Date,
     Ptt.Task,
     Ptt.Format,
     Ptt.Options,

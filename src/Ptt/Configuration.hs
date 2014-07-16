@@ -16,6 +16,7 @@ import Data.Yaml
 import System.Directory
 import System.FilePath
 import Ptt.Util
+import Ptt.Time.Date
 
 defaultStorageFilename :: String
 defaultStorageFilename = ".ptt_storage.yaml"

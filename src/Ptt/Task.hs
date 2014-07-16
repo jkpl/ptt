@@ -2,23 +2,24 @@
 module Ptt.Task
   ( TaskMap(..)
   , Selector
-  , TaskName
   , Tasks
+  , TaskName
   , Task(..)
   , taskLength
   , totalLength
   , addTask
   , deleteTask
-  , renameTask
-  , moveTask
-  , emptyTaskMap
   , adjustTask
+  , adjustTasks
   , deleteDescription
   , deleteInterval
+  , renameTask
+  , moveTask
   , getTask
   , getTasksForDay
+  , emptyTaskMap
   , deleteOldTasks
-  , taskMapToList
+  , groupByDay
   ) where
 
 import Prelude as P
@@ -30,18 +31,19 @@ import Data.Maybe
 import Data.Time.Calendar
 import Data.Yaml
 import qualified Data.Map as M
+import qualified Data.Set as S
 import qualified Ptt.Time.Interval as I
-import Ptt.Util
+import Ptt.Time.Date
 
-newtype TaskMap = Tm (M.Map Day Tasks) deriving Show
-type Selector = (Day, TaskName)
 type TaskName = T.Text
-type Tasks = M.Map TaskName Task
+type Selector = (Day, TaskName)
+type Tasks = M.Map Selector Task
+newtype TaskMap = Tm { getTM :: Tasks } deriving (Show, Eq)
 
 data Task = Task
   { taskDescriptions :: [T.Text]
   , taskTimes :: [I.Interval]
-  } deriving (Eq, Show)
+  } deriving (Ord, Eq, Show)
 
 instance ToJSON Task where
   toJSON (Task descs times) = object
@@ -54,38 +56,37 @@ instance FromJSON Task where
   parseJSON _ = mzero
 
 instance ToJSON TaskMap where
-  toJSON (Tm tasks) = toJSON . M.mapKeys formatDay $ tasks
+  toJSON (Tm tasks) = toJSON . M.mapKeys formatSelector $ tasks
+    where formatSelector (day, name) = T.concat [formatDay day, ":", name]
 
 instance FromJSON TaskMap where
   parseJSON v = Tm <$> do
     m1 <- parseJSON v
     m2 <- mapM convert (M.toList m1)
     return $ M.fromList m2
-    where convert (ds, tasks) = do
-            d <- parseJsonDay ds
-            return (d, tasks)
-          parseJsonDay ds =
-            case parseDay ds of
-              Just d -> return d
-              Nothing -> mzero
+    where convert (s, tasks) = do
+            let (ds, n) = T.break (== ':') s
+                name = T.tail n
+            day <- maybe mzero return (parseDay ds)
+            return ((day, name), tasks)
 
 taskLength :: Task -> Integer
 taskLength = sum . map I.intervalLength . taskTimes
 
-totalLength :: Tasks -> Integer
-totalLength = sum . map taskLength . M.elems
+totalLength :: TaskMap -> Integer
+totalLength = sum . map taskLength . M.elems . getTM
 
-mergeTasks :: Task -> Task -> Task
-mergeTasks (Task descs1 times1) (Task descs2 times2) =
+merge :: Task -> Task -> Task
+merge (Task descs1 times1) (Task descs2 times2) =
   let descs = descs1 ++ descs2
       times = foldl' (flip I.add) times2 times1
   in Task descs times
 
-add :: TaskName -> Task -> Tasks -> Tasks
-add name task tasks =
-  let existingTask = M.lookup name tasks
-      taskToInsert = maybe task (mergeTasks task) existingTask
-  in M.insert name taskToInsert tasks
+addTask :: Selector -> Task -> TaskMap -> TaskMap
+addTask selector task (Tm tasks) =
+  let existingTask = M.lookup selector tasks
+      taskToInsert = maybe task (merge task) existingTask
+  in Tm $ M.insert selector taskToInsert tasks
 
 deleteDescription :: Int -> Task -> Task
 deleteDescription i (Task ds ts) = Task (deleteNth i ds) ts
@@ -95,49 +96,67 @@ deleteNth i xs
   | i > 0 = take (i - 1) xs ++ drop i xs
   | otherwise = xs
 
-rename :: TaskName -> TaskName -> Tasks -> Tasks
-rename newName name tasks =
-  let updatedTasks = do task <- M.lookup name tasks
-                        return $ add newName task (M.delete name tasks)
+changeKey :: Selector -> Selector -> TaskMap -> TaskMap
+changeKey selector newSelector tasks =
+  let updatedTasks = do
+        task <- getTask selector tasks
+        return $ addTask newSelector task (deleteTask selector tasks)
   in fromMaybe tasks updatedTasks
+
+moveTask :: Selector -> Day -> TaskMap -> TaskMap
+moveTask selector day = changeKey selector (day, snd selector)
+
+renameTask :: Selector -> TaskName -> TaskMap -> TaskMap
+renameTask selector newName = changeKey selector (fst selector, newName)
 
 deleteInterval :: I.Interval -> Task -> Task
 deleteInterval i (Task ds ts) = Task ds (I.remove i ts)
 
 getTask :: Selector -> TaskMap -> Maybe Task
-getTask (day, name) (Tm tasks) = M.lookup day tasks >>= M.lookup name
-
-addTask :: Selector -> Task -> TaskMap -> TaskMap
-addTask (day, name) task = adjust (add name task) day
-
-renameTask :: Selector -> TaskName -> TaskMap -> TaskMap
-renameTask (day, name) newName = adjust (rename newName name) day
+getTask selector = M.lookup selector . getTM
 
 deleteTask :: Selector -> TaskMap -> TaskMap
-deleteTask (day, name) = adjust (M.delete name) day
+deleteTask selector = Tm . M.delete selector . getTM
 
 adjustTask :: (Task -> Task) -> Selector -> TaskMap -> TaskMap
-adjustTask f (day, name) = adjust (M.adjust f name) day
-
-moveTask :: Selector -> Day -> TaskMap -> TaskMap
-moveTask selector@(_, name) to tasks = fromMaybe tasks moveTask'
-  where moveTask' = do
-          task <- getTask selector tasks
-          return $ addTask (to, name) task (deleteTask selector tasks)
+adjustTask f selector = Tm . M.adjust f selector . getTM
 
 deleteOldTasks :: Day -> TaskMap -> TaskMap
 deleteOldTasks d (Tm tasks) = Tm $ M.filterWithKey isNewer tasks
-  where isNewer k _ = k >= d
+  where isNewer (k, _) _ = k >= d
 
-getTasksForDay :: Day -> TaskMap -> Maybe Tasks
-getTasksForDay day (Tm tasks) = M.lookup day tasks
+getTasksForDay :: Day -> TaskMap -> [(TaskName, Task)]
+getTasksForDay d = M.toList . M.mapKeys snd . tasksForDay d
 
-adjust :: (Tasks -> Tasks) -> Day -> TaskMap -> TaskMap
-adjust f day (Tm tasks) = Tm $ M.insertWith (\_ ts -> f ts) day (f M.empty) tasks
+tasksForDay :: Day -> TaskMap -> Tasks
+tasksForDay day = M.filterWithKey f . getTM
+  where f (k, _) _ = k == day
 
 emptyTaskMap :: TaskMap
 emptyTaskMap = Tm M.empty
 
-taskMapToList :: TaskMap -> [(Day, Tasks)]
-taskMapToList (Tm tasks) = M.toList tasks
+tasksForSelector :: DateSelector -> TaskMap -> Tasks
+tasksForSelector selector tasks =
+  case selector of
+    AllDates -> getTM tasks
+    DateRange from to -> tasksBetweenDays from to tasks
+    SingleDate day -> tasksForDay day tasks
+
+tasksBetweenDays :: Day -> Day -> TaskMap -> Tasks
+tasksBetweenDays from to = M.filterWithKey f . getTM
+  where f (day, _) _ = from <= day && day <= to
+
+adjustTasks :: (Task -> Task) -> DateSelector -> TaskMap -> TaskMap
+adjustTasks f selector taskmap =
+  mergeTasks taskmap . M.toList . M.map f
+  . tasksForSelector selector $ taskmap
+
+mergeTasks :: TaskMap -> [(Selector, Task)] -> TaskMap
+mergeTasks taskmap = foldl' merger taskmap
+  where merger tm (selector, task) = addTask selector task tm
+
+groupByDay :: Tasks -> [(Day, (S.Set (TaskName, Task)))]
+groupByDay tasks = M.toList $ M.foldlWithKey folder M.empty tasks
+  where folder acc (day, name) task =
+          M.insertWith S.union day (S.singleton (name, task)) acc
 

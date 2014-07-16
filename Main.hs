@@ -9,7 +9,7 @@ import Ptt.Options
 import Ptt.Configuration as Conf
 import Ptt.Task
 import Ptt.Action
-import Ptt.Util
+import qualified Ptt.Time as Time
 
 main :: IO ()
 main = do
@@ -26,7 +26,7 @@ getDay :: Options -> IO Day
 getDay options =
   case optDay options of
     Just d -> return d
-    Nothing -> currentDay
+    Nothing -> Time.currentDay
 
 getTasks :: Configuration -> IO TaskMap
 getTasks conf = do

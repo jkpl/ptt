@@ -45,7 +45,6 @@ showTasks day verbose taskName tasks =
       task <- getTask (day, name) tasks
       let fn = if verbose then F.formatTask else F.formatTaskShort
       return $ fn task
-    Nothing -> fromMaybe T.empty $ do
-      ts <- getTasksForDay day tasks
+    Nothing ->
       let fn = if verbose then F.formatTasks else F.formatTasksShort
-      return $ fn ts
+      in fn (getTasksForDay day tasks)
