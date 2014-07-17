@@ -11,7 +11,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   build-depends:
-    base >=4.6 && <4.7,
+    base >=4.7 && <4.8,
     time,
     text,
     containers,
@@ -39,8 +39,8 @@ executable ptt
   main-is:             Main.hs
   default-language:    Haskell2010
   build-depends:
-    base >=4.6 && <4.7,
-    yaml ==0.8.8.3,
+    base,
+    yaml,
     time,
     text,
     filepath,
@@ -56,7 +56,7 @@ test-suite spec
   default-language:    Haskell2010
   ghc-options:         -Wall
   build-depends:
-    base  >=4.6 && <4.7,
+    base,
     ptt,
     time,
     text,
