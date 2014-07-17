@@ -29,8 +29,8 @@ data DateSelector
   | DateRange Day Day
   deriving (Eq, Show)
 
-toSelector :: ParsedDateSelector -> IO (DateSelector)
-toSelector pds = (flip toSelectorWithDay pds) <$> currentDay
+toSelector :: ParsedDateSelector -> IO DateSelector
+toSelector pds = (`toSelectorWithDay` pds) <$> currentDay
 
 toSelectorWithDay :: Day -> ParsedDateSelector -> DateSelector
 toSelectorWithDay day pds =

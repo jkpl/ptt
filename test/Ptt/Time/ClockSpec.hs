@@ -5,8 +5,8 @@ import Test.QuickCheck
 import Ptt.Time.Clock
 
 spec :: Spec
-spec = do
-  describe "time parsing and formatting" $ do
+spec =
+  describe "time parsing and formatting" $
     it "can be repeated to produce the original value" $ property $
-      \(Positive seconds) -> (secondsFromText (secondsToText seconds)) == Just seconds
+      \(Positive seconds) -> secondsFromText (secondsToText seconds) == Just seconds
 

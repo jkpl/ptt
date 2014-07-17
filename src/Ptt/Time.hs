@@ -1,9 +1,5 @@
-module Ptt.Time
-  ( module Ptt.Time.Clock
-  , module Ptt.Time.Interval
-  , module Ptt.Time.Date
-  ) where
+module Ptt.Time (module T) where
 
-import Ptt.Time.Clock
-import Ptt.Time.Interval
-import Ptt.Time.Date
+import Ptt.Time.Clock as T
+import Ptt.Time.Interval as T
+import Ptt.Time.Date as T

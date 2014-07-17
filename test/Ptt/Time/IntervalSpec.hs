@@ -8,7 +8,7 @@ import Ptt.Arbitrary()
 
 spec :: Spec
 spec = do
-  describe "interval" $ do
+  describe "interval" $
     it "selects the correct order for from and to values" $ property $
       \(I.Interval from to) -> from <= to
 
@@ -29,11 +29,11 @@ spec = do
       I.hasOverlap i1 i2 `shouldBe` False
       I.hasOverlap i2 i1 `shouldBe` False
 
-  describe "intervalLength" $ do
+  describe "intervalLength" $
     it "selects the length of the interval" $ property $
       \i@(I.Interval from to) -> to - from == I.intervalLength i
 
-  describe "add" $ do
+  describe "add" $
     it "creates a list of intervals that's at least as large as the list before it" $ property $
       \i i2 i3 i4 ->
         let is = intervalList [i2, i3, i4]
@@ -64,14 +64,14 @@ spec = do
       I.difference i1 i2 `shouldBe` [I.fromTimeOfDay (10, 30) (11, 33)]
       I.difference i1 i3 `shouldBe` [I.fromTimeOfDay (10, 45) (12, 00)]
 
-  describe "remove" $ do
+  describe "remove" $
     it "creates a list of intervals that's never larger than a list before it" $ property $
       \i i2 i3 i4 ->
         let is = intervalList [i2, i3, i4]
             nextIs = I.remove i is
         in totalLength nextIs <= totalLength is
 
-  describe "parsing and formatting" $ do
+  describe "parsing and formatting" $
     it "can be repeated to produce the original interval" $ property $
       \interval -> I.intervalFromText (I.intervalToText interval) == Just interval
 

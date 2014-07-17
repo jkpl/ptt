@@ -29,7 +29,7 @@ data Command
   deriving (Eq, Show)
 
 dateSelector :: Parser ParsedDateSelector
-dateSelector = (fromMaybe DefaultDate) <$> optional opt
+dateSelector = fromMaybe DefaultDate <$> optional opt
   where opt = nullOption
             $ long "days"
             <> short 'd'
@@ -106,9 +106,9 @@ cmd = subparser
 
     add = command "add" $ info
       (Add <$> task
-           <*> (optional interval)
-           <*> (optional description)
-           <*> (optional dayOption))
+           <*> optional interval
+           <*> optional description
+           <*> optional dayOption)
       (fullDesc <> progDesc "Add new task")
 
     deleteTask = command "deltask" $ info
@@ -116,19 +116,19 @@ cmd = subparser
       (fullDesc <> progDesc "Delete task")
 
     deleteDesc = command "deldesc" $ info
-      (DeleteDesc <$> task <*> descriptionIndex <*> (optional dayOption))
+      (DeleteDesc <$> task <*> descriptionIndex <*> optional dayOption)
       (fullDesc <> progDesc "Delete description with given index")
 
     deleteInterval = command "del" $ info
-      (DeleteInterval <$> task <*> interval <*> (optional dayOption))
+      (DeleteInterval <$> task <*> interval <*> optional dayOption)
       (fullDesc <> progDesc "Delete interval from task")
 
     rename = command "rename" $ info
-      (Rename <$> task <*> task <*> (optional dayOption))
+      (Rename <$> task <*> task <*> optional dayOption)
       (fullDesc <> progDesc "Rename task")
 
     move = command "move" $ info
-      (Move <$> task <*> day <*> (optional dayOption))
+      (Move <$> task <*> day <*> optional dayOption)
       (fullDesc <> progDesc "Move task to other day")
 
 getOptions :: IO Options

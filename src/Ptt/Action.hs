@@ -34,7 +34,7 @@ data Result
   deriving Show
 
 fromOptions :: O.Options -> IO Action
-fromOptions options = (flip fromOptionsWithDay options) <$> currentDay
+fromOptions options = (`fromOptionsWithDay` options) <$> currentDay
 
 fromOptionsWithDay :: Day -> O.Options -> Action
 fromOptionsWithDay defaultDay options =
@@ -53,7 +53,7 @@ fromOptionsWithDay defaultDay options =
       Rename (taskSelector day name) newName
     O.Move name newDay day ->
       Move (taskSelector day name) newDay
-  where sel selector = toSelectorWithDay defaultDay selector
+  where sel = toSelectorWithDay defaultDay
         taskSelector day name = (fromMaybe defaultDay day, name)
 
 doAction :: Action -> TaskMap -> Result

@@ -2,6 +2,7 @@ module Main where
 
 import qualified Data.Text.IO as TIO
 import qualified Data.Text as T
+import Control.Monad
 import System.Directory
 import Data.Maybe
 import Data.Yaml
@@ -20,9 +21,7 @@ main = do
     Print text -> printText text
 
 printText :: T.Text -> IO ()
-printText s =
-  if T.null s then return ()
-  else TIO.putStrLn s
+printText s = unless (T.null s) $ TIO.putStrLn s
 
 getAction :: IO Action
 getAction = getOptions >>= fromOptions
@@ -31,15 +30,14 @@ getTasks :: Configuration -> IO TaskMap
 getTasks conf = do
   path <- getStoragePath conf
   tasksExist <- doesFileExist path
-  case tasksExist of
-    True -> do
-      tasks <- decodeFile path
-      return $ fromMaybe emptyTaskMap tasks
-    False -> return emptyTaskMap
+  if tasksExist then
+    (do tasks <- decodeFile path
+        return $ fromMaybe emptyTaskMap tasks)
+  else return emptyTaskMap
 
 saveTasks :: Configuration -> TaskMap -> IO ()
 saveTasks conf tasks = do
   path <- getStoragePath conf
   day <- getLastKeptDay conf
-  let ts = maybe tasks (flip deleteOldTasks tasks) day
+  let ts = maybe tasks (`deleteOldTasks` tasks) day
   encodeFile path ts

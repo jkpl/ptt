@@ -23,7 +23,7 @@ defaultStorageFilename = ".ptt_storage.yml"
 configurationFilename :: String
 configurationFilename = ".ptt.yml"
 
-getConfPath :: IO (FilePath)
+getConfPath :: IO FilePath
 getConfPath = do
   home <- getHomeDirectory
   return $ combine home configurationFilename
@@ -51,13 +51,12 @@ readFromFile :: IO Configuration
 readFromFile = do
   confPath <- getConfPath
   confExists <- doesFileExist confPath
-  case confExists of
-    True -> do
-      conf <- decodeFile confPath
-      return $ fromMaybe defaultConfiguration conf
-    False -> do
-      writeDefaultConf
-      return defaultConfiguration
+  if confExists then
+    (do conf <- decodeFile confPath
+        return $ fromMaybe defaultConfiguration conf)
+  else
+    (do writeDefaultConf
+        return defaultConfiguration)
 
 writeDefaultConf :: IO ()
 writeDefaultConf = do

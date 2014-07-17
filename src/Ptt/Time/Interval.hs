@@ -79,14 +79,14 @@ difference :: Interval -> Interval -> [Interval]
 difference i1@(Interval f1 t1) (Interval f2 t2)
   | f1 < f2 && t2 < t1 = [interval f1 f2, interval t2 t1]
   | f2 <= f1 && t1 <= t2 = []
-  | t2 < f1 || t1 < f2 = i1 : []
+  | t2 < f1 || t1 < f2 = [i1]
   | otherwise =
     let from = if f2 < f1 then max f1 t2 else f1
         to = if f2 < f1 then t1 else min t1 f2
-    in interval from to : []
+    in [interval from to]
 
 remove :: Interval -> [Interval] -> [Interval]
-remove i = concatMap (\a -> difference a i)
+remove i = concatMap (`difference` i)
 
 intervalToText :: Interval -> T.Text
 intervalToText (Interval from to) =

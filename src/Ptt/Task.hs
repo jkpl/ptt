@@ -163,10 +163,10 @@ adjustTasks f selector taskmap =
   . tasksForSelector selector $ taskmap
 
 mergeTasks :: TaskMap -> [(Selector, Task)] -> TaskMap
-mergeTasks taskmap = foldl' merger taskmap
+mergeTasks = foldl' merger 
   where merger tm (selector, task) = addTask selector task tm
 
-groupByDay :: Tasks -> [(Day, (S.Set (TaskName, Task)))]
+groupByDay :: Tasks -> [(Day, S.Set (TaskName, Task))]
 groupByDay = sort . M.toList . M.foldlWithKey folder M.empty
   where folder acc (day, name) task =
           M.insertWith S.union day (S.singleton (name, task)) acc

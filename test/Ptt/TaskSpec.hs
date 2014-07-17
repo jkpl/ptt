@@ -38,18 +38,18 @@ spec = do
           tm = addTask selector1 t1 (addTask selector1 t2 emptyTaskMap)
           task = getTask selector1 tm
       fmap taskDescriptions task
-        `shouldSatisfy` (exists (== ["desc1", "desc2", "desc3"]))
+        `shouldSatisfy` exists (== ["desc1", "desc2", "desc3"])
       fmap taskTimes task
-        `shouldSatisfy` (exists (== [i3]))
+        `shouldSatisfy` exists (== [i3])
 
-  describe "renameTask" $ do
+  describe "renameTask" $
     it "changes the name of the task" $ do
       let tm = renameTask selector1 "zap" taskMap
       getTask (day1, "zap") tm `shouldBe` Just task1
       getTask selector1 tm `shouldBe` Nothing
       getTask selector2 tm `shouldBe` Just task2
 
-  describe "moveTask" $ do
+  describe "moveTask" $
     it "changes the day of the task" $ do
       let d2 = fromGregorian 1972 2 3
           tm = moveTask selector1 d2 taskMap
@@ -57,17 +57,17 @@ spec = do
       getTask selector1 tm `shouldBe` Nothing
       getTask selector2 tm `shouldBe` Just task2
 
-  describe "adjustTask" $ do
+  describe "adjustTask" $
     it "allows modifying a found task with given function" $ do
       let interval = I.fromTimeOfDay (9, 0) (12, 0)
           descs = ["desc1"]
           tm = adjustTask (\(Task ds is) -> Task ds (interval:is)) selector1
                (addTask selector1 (Task descs []) emptyTaskMap)
           task = getTask selector1 tm
-      fmap taskDescriptions task `shouldSatisfy` (exists (== descs))
-      fmap taskTimes task `shouldSatisfy` (exists (== [interval]))
+      fmap taskDescriptions task `shouldSatisfy` exists (== descs)
+      fmap taskTimes task `shouldSatisfy` exists (== [interval])
 
-  describe "deleteOldTasks" $ do
+  describe "deleteOldTasks" $
     it "deletes only tasks older than the given date" $ do
       let tm1 = deleteOldTasks day1 taskMap
           tm2 = deleteOldTasks day2 taskMap
@@ -83,5 +83,5 @@ spec = do
       getTask selector3 tm3 `shouldBe` Just task3
 
 exists :: (a -> Bool) -> Maybe a -> Bool
-exists f m = maybe False f m
+exists = maybe False
 

@@ -38,7 +38,7 @@ secondsToText seconds =
       hs = pad $ hours seconds
       ms = pad $ minutesOfHours seconds
       hm = T.concat [hs, ":", ms]
-  in if s == 0 then hm else T.concat [hm, ":", (pad s)]
+  in if s == 0 then hm else T.concat [hm, ":", pad s]
   where pad i
           | i < 10 = T.append "0" (tshow (abs i))
           | otherwise = tshow i
@@ -60,5 +60,5 @@ secondsFromText time =
     _ -> Nothing
 
 isTimeSeparator :: Char -> Bool
-isTimeSeparator c = any (== c) ['.', ':']
+isTimeSeparator c = c `elem` ".:"
 
