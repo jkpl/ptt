@@ -41,7 +41,8 @@ formatTasksLong :: [(TaskName, Task)] -> T.Text
 formatTasksLong tasks =
   let tasksText = separateBy 2 . map formatPair $ tasks
       totalText = T.append "Total: " (formatTasksTotalLength tasks)
-  in T.intercalate "\n\n" [tasksText, totalText]
+  in if null tasks then T.empty
+     else T.intercalate "\n\n" [tasksText, totalText]
   where formatPair (name, task) = T.concat
               [ name, ":\n"
               , indent 2 $ formatTaskLong task]
@@ -50,7 +51,8 @@ formatTasksShort :: [(TaskName, Task)] -> T.Text
 formatTasksShort tasks =
   let tasksText = separateBy 1 . map formatPair $ tasks
       totalText = T.append "Total: " (formatTasksTotalLength tasks)
-  in T.concat [tasksText, "\n", totalText]
+  in if null tasks then T.empty
+     else T.concat [tasksText, "\n", totalText]
   where formatPair (name, task) = T.concat [name, ": ", formatTaskShort task]
 
 formatTask :: Bool -> Task -> T.Text

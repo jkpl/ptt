@@ -9,6 +9,7 @@ module Ptt.Task
   , totalLength
   , addTask
   , deleteTask
+  , deleteTasks
   , adjustTask
   , adjustTasks
   , deleteDescription
@@ -17,6 +18,7 @@ module Ptt.Task
   , moveTask
   , getTask
   , getTasksForDay
+  , tasksForSelector
   , emptyTaskMap
   , deleteOldTasks
   , groupByDay
@@ -118,6 +120,11 @@ getTask selector = M.lookup selector . getTM
 deleteTask :: Selector -> TaskMap -> TaskMap
 deleteTask selector = Tm . M.delete selector . getTM
 
+deleteTasks :: DateSelector -> TaskName -> TaskMap -> TaskMap
+deleteTasks selector name tasks =
+  let foundTasks = tasksWithName name . tasksForSelector selector $ tasks
+  in Tm $ M.difference (getTM tasks) foundTasks
+
 adjustTask :: (Task -> Task) -> Selector -> TaskMap -> TaskMap
 adjustTask f selector = Tm . M.adjust f selector . getTM
 
@@ -134,6 +141,10 @@ tasksForDay day = M.filterWithKey f . getTM
 
 emptyTaskMap :: TaskMap
 emptyTaskMap = Tm M.empty
+
+tasksWithName :: TaskName -> Tasks -> Tasks
+tasksWithName name = M.filterWithKey f
+  where f (_, n) _ = n == name
 
 tasksForSelector :: DateSelector -> TaskMap -> Tasks
 tasksForSelector selector tasks =
@@ -156,7 +167,7 @@ mergeTasks taskmap = foldl' merger taskmap
   where merger tm (selector, task) = addTask selector task tm
 
 groupByDay :: Tasks -> [(Day, (S.Set (TaskName, Task)))]
-groupByDay tasks = M.toList $ M.foldlWithKey folder M.empty tasks
+groupByDay = sort . M.toList . M.foldlWithKey folder M.empty
   where folder acc (day, name) task =
           M.insertWith S.union day (S.singleton (name, task)) acc
 

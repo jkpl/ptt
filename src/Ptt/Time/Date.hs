@@ -1,9 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ptt.Time.Date
-  ( DateSelector(..)
+  ( ParsedDateSelector(..)
+  , DateSelector(..)
   , parseFromText
   , selectorFromText
   , toSelector
+  , toSelectorWithDay
   , currentDay
   , parseDay
   , formatDay
@@ -28,10 +30,13 @@ data DateSelector
   deriving (Eq, Show)
 
 toSelector :: ParsedDateSelector -> IO (DateSelector)
-toSelector pds =
+toSelector pds = (flip toSelectorWithDay pds) <$> currentDay
+
+toSelectorWithDay :: Day -> ParsedDateSelector -> DateSelector
+toSelectorWithDay day pds =
   case pds of
-    DefaultDate -> SingleDate <$> currentDay
-    DSelector s -> pure s
+    DefaultDate -> SingleDate day
+    DSelector s -> s
 
 parseFromText :: T.Text -> Maybe ParsedDateSelector
 parseFromText s = parseDefaultDate s <|> (DSelector <$> selectorFromText s)

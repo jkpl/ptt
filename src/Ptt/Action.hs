@@ -1,48 +1,92 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ptt.Action
-  ( Result(..)
-  , action
+  ( Action(..)
+  , Result(..)
+  , doAction
+  , fromOptions
+  , fromOptionsWithDay
   ) where
 
 import Prelude as P
 import qualified Data.Text as T
+import Control.Applicative
 import Data.Maybe
 import Data.Time.Calendar
 import Ptt.Task
+import Ptt.Time.Date
+import qualified Ptt.Time.Interval as I
 import qualified Ptt.Format as F
-import Ptt.Options
+import qualified Ptt.Options as O
+
+data Action
+  = Display DateSelector (Maybe TaskName) Bool
+  | Add Selector (Maybe I.Interval) (Maybe T.Text)
+  | DeleteTask DateSelector TaskName
+  | DeleteDesc Selector Int
+  | DeleteInterval Selector I.Interval
+  | Rename Selector TaskName
+  | Move Selector Day
+  deriving Show
 
 data Result
   = Edit TaskMap
   | Print T.Text
   deriving Show
 
-action :: Day -> Command -> TaskMap -> Result
-action day command tasks =
-  case command of
-    Display taskName verbose -> Print $ showTasks day verbose taskName tasks
-    _ -> Edit $ edit day command tasks
+fromOptions :: O.Options -> IO Action
+fromOptions options = (flip fromOptionsWithDay options) <$> currentDay
 
-edit :: Day -> Command -> TaskMap -> TaskMap
-edit day command tasks =
-  case command of
-    Add s interval d ->
-      let selector = (day, s)
-      in addTask selector (Task (maybeToList d) (maybeToList interval)) tasks
-    DeleteTask s -> deleteTask (day, s) tasks
-    DeleteDesc s i -> adjustTask (deleteDescription i) (day, s) tasks
-    DeleteInterval s interval ->
-      let selector = (day, s)
-      in adjustTask (deleteInterval interval) selector tasks
-    Rename s n -> renameTask (day, s) n tasks
-    Move s d -> moveTask (day, s) d tasks
+fromOptionsWithDay :: Day -> O.Options -> Action
+fromOptionsWithDay defaultDay options =
+  case O.optCommand options of
+    O.Display name selector verbose ->
+      Display (sel selector) name verbose
+    O.Add name interval desc day ->
+      Add (taskSelector day name) interval desc
+    O.DeleteTask name selector ->
+      DeleteTask (sel selector) name
+    O.DeleteDesc name index day ->
+      DeleteDesc (taskSelector day name) index
+    O.DeleteInterval name interval day ->
+      DeleteInterval (taskSelector day name) interval
+    O.Rename name newName day ->
+      Rename (taskSelector day name) newName
+    O.Move name newDay day ->
+      Move (taskSelector day name) newDay
+  where sel selector = toSelectorWithDay defaultDay selector
+        taskSelector day name = (fromMaybe defaultDay day, name)
+
+doAction :: Action -> TaskMap -> Result
+doAction action tasks =
+  case action of
+    Display selector taskName verbose ->
+      Print $ showTasks selector taskName verbose tasks
+    _ -> Edit $ edit action tasks
+
+edit :: Action -> TaskMap -> TaskMap
+edit action tasks =
+  case action of
+    Add selector interval desc ->
+      addTask selector (Task (maybeToList desc) (maybeToList interval)) tasks
+    DeleteTask selector name ->
+      deleteTasks selector name tasks
+    DeleteDesc selector index ->
+      adjustTask (deleteDescription index) selector tasks
+    DeleteInterval selector interval ->
+      adjustTask (deleteInterval interval) selector tasks
+    Rename selector name ->
+      renameTask selector name tasks
+    Move selector day ->
+      moveTask selector day tasks
     _ -> tasks
 
-showTasks :: Day -> Bool -> Maybe TaskName -> TaskMap -> T.Text
-showTasks day verbose taskName tasks =
-  case taskName of
-    Just name ->
+showTasks :: DateSelector -> Maybe TaskName -> Bool -> TaskMap -> T.Text
+showTasks selector taskName verbose tasks =
+  case (selector, taskName) of
+    (SingleDate day, Just name) ->
       maybe T.empty (F.formatTask verbose) (getTask (day, name) tasks)
-    Nothing ->
+    (SingleDate day, Nothing) ->
       F.formatTasks verbose (getTasksForDay day tasks)
+    _ ->
+      F.formatTasksByDay verbose (tasksForSelector selector tasks)
 

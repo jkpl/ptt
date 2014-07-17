@@ -1,32 +1,31 @@
 module Main where
 
 import qualified Data.Text.IO as TIO
+import qualified Data.Text as T
 import System.Directory
 import Data.Maybe
-import Data.Time
 import Data.Yaml
 import Ptt.Options
 import Ptt.Configuration as Conf
 import Ptt.Task
 import Ptt.Action
-import qualified Ptt.Time as Time
 
 main :: IO ()
 main = do
-  opts <- getOptions
+  action <- getAction
   conf <- Conf.readFromFile
-  day <- getDay opts
   tasks <- getTasks conf
-  let result = action day (optCommand opts) tasks
-  case result of
+  case doAction action tasks of
     Edit newTasks -> saveTasks conf newTasks
-    Print text -> TIO.putStrLn text
+    Print text -> printText text
 
-getDay :: Options -> IO Day
-getDay options =
-  case optDay options of
-    Just d -> return d
-    Nothing -> Time.currentDay
+printText :: T.Text -> IO ()
+printText s =
+  if T.null s then return ()
+  else TIO.putStrLn s
+
+getAction :: IO Action
+getAction = getOptions >>= fromOptions
 
 getTasks :: Configuration -> IO TaskMap
 getTasks conf = do
